@@ -1,0 +1,944 @@
+<?php
+
+/**
+ * Copyright © Magento, Inc. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+
+// @codingStandardsIgnoreFile
+?>
+<?php
+$productUrl = "";
+$helper = $block->getHelper();
+$frame_data  = $helper->getFrameDefualtImage();
+$frame_url  = $frame_data['url'];
+$frame_depth  = $frame_data['depth'];
+$session = $helper->getSession();
+$max_image_size_dragbar = $helper->getFrameGlassMaxImageSizeDragbar();
+
+if ($session->getMakeCanvasScaleparameters() > -1) :
+    $scaleparameters  = $session->getMakeCanvasScaleparameters();
+    if (!$scaleparameters) :
+        $scaleparameters  = 0;
+    endif;
+endif;
+$dragbar = explode('X', $max_image_size_dragbar);
+$max_image_size_dragbar_width = $dragbar[0];
+$max_image_size_dragbar_height = $dragbar[1];
+
+if ($image_main =  $session->getMakeCanvasModifiedimage()) {
+    $biggestCalculate = $helper->getBiggestCalculateSize();
+    $smallCalculate = $helper->getSmallestCalculateSize();
+    $width = $session->getMakeCanvasModifiedimageWidth();
+    $height = $session->getMakeCanvasModifiedimageHeight();
+
+
+    if ($imageDividedBy = $session->getMakeCanvasImageDividedBy()) : /* MakeCanvasImageDividedBy: resize based on calculation  */
+
+        $width_bigg =  round(($width * $imageDividedBy) / $biggestCalculate);
+        $height_bigg = round(($height * $imageDividedBy) / $biggestCalculate);
+        $width_small =  round(($width * $imageDividedBy) / $smallCalculate);
+        $height_small = round(($height * $imageDividedBy) / $smallCalculate);
+    else :
+        $width_bigg =  round($width / $biggestCalculate);
+        $height_bigg =  round($height / $biggestCalculate);
+        $width_small =  round($width / $smallCalculate);
+        $height_small = round($height / $smallCalculate);
+    endif;
+    $image_ratio = number_format((float)($width_small / $height_small), 2, '.', '');
+    $height_bigg = $width_bigg / $image_ratio;
+    $height_bigg = round((float)($height_bigg));
+
+    $calculate = true;
+    if (($width_bigg <= $max_image_size_dragbar_width && $height_bigg <= $max_image_size_dragbar_height) || ($width_bigg <= $max_image_size_dragbar_height && $height_bigg <= $max_image_size_dragbar_width)) {
+        $calculate = false;
+    } elseif (($width_bigg > $max_image_size_dragbar_width && $width_bigg < $max_image_size_dragbar_height) && $height_bigg < $max_image_size_dragbar_width) {
+        $calculate = false;
+    }
+    if ($calculate) {
+        $width_bigg = $max_image_size_dragbar_width;
+        $height_bigg = round(number_format((float)($max_image_size_dragbar_width / $image_ratio), 2, '.', ''));
+
+        if ($height_bigg > $max_image_size_dragbar_height) {
+            $height_bigg = $max_image_size_dragbar_height;
+            $width_bigg = round(number_format((float)($max_image_size_dragbar_height * $image_ratio), 2, '.', ''));
+        }
+        $width_small_pixel = $width_bigg * $biggestCalculate;
+        $height_small_pixel = $height_bigg * $biggestCalculate;
+        $width_small = round(number_format((float)($width_small_pixel / $smallCalculate), 2, '.', ''));
+        $height_small = round(number_format((float)($height_small_pixel / $smallCalculate), 2, '.', ''));
+    }
+
+
+?>
+    <div class="loader"></div>
+    <form action="<?php echo $block->getActionUrl(); ?>" method="post" id="framesize-form">
+        <div class="product-info-main">
+            <div class="frame-size-container">
+                <div class="sub-head"><?php echo __('Select Image Size') ?></div>
+                <div class="image-size-slider-outer">
+                    <div class="range-box image-size-slider">
+                        <?php $max_step = (($width_bigg - $width_small) / 0.25); ?>
+                        <span class="range-start-val"><?php //echo __($width_small.'" X '. $height_small.'"'); 
+                                                        ?></span>
+                        <span class="range-end-val"><?php echo $width_bigg . '" X ' . $height_bigg . '"'; ?></span>
+                        <span class="range-current-val"><?php echo __($width_small . '" X ' . $height_small . '"'); ?></span>
+
+                        <?php $Scaleparameters = $helper->getSession()->getGlassFrameScaleparameters();
+                        if ($Scaleparameters) :
+                        ?>
+                            <input type="range" id="scale-control" value="<?php echo $Scaleparameters; ?>" min="0" max="<?php echo round($max_step); ?>" step="1">
+                        <?php else : ?>
+                            <input type="range" id="scale-control" value="0" min="0" max="<?php echo round($max_step); ?>" step="1">
+                        <?php endif; ?>
+                        <input type="hidden" id="scaleparameters" name="scaleparameters" value="" />
+                        <input type="hidden" id="final-frame-size" name="final_frame_size" value="" />
+                        <input type="hidden" id="typeofbutton" name="typeofbutton" value="" />
+                    </div>
+                    <?php
+                    if ($helper->getSession()->getCanvasFrameManuallyWidth()) :
+                        $width_small_mannualy = $helper->getSession()->getCanvasFrameManuallyWidth();
+                    else :
+                        $width_small_mannualy =  $width_small;
+                    endif;
+                    if ($helper->getSession()->getCanvasFrameManuallyHeight()) :
+                        $height_small_mannualy = $helper->getSession()->getCanvasFrameManuallyHeight();
+                    else :
+                        $height_small_mannualy =  $height_small;
+                    endif;
+                    ?>
+                    <div class="mailin-field range-box image-size-slider image-size-number manual-size-fields">
+                        <div class="half-field">
+                            <label>Width(In)</label>
+                            <input type="number" min="<?= $helper->getMinWidthDragbar() ?>" max="<?= $helper->getMaxWidthDragbar() ?>" step="any" name='manually_width' required="required" class="manually" value="<?= $width_small_mannualy ?>" />
+                        </div>
+                        <div class="half-field disabled">
+                            <label>Height(In)</label>
+                            <input type="number" min="1" step="any" name='manually_height' required="required" class="manually" readonly value="<?= $height_small_mannualy ?>" />
+                        </div>
+                    </div>
+                    <div class="other-sizes-info" style="text-align: center; font-size: 11px; background: #eaeaea; padding: 5px; letter-spacing: 0.4px;">Please enter the size you wish or contact us at <a href="mailto:support@framehaus.ca" title="support@framehaus.ca">support@framehaus.ca</a></div>
+                </div>
+                <div class="field required textureoptions">
+                    <div class="sub-head"><?php echo __('Select Finishes') ?></div>
+                    <div class="control">
+                        <div class="no-hide options-list nested texture-opt" id="options-1-list">
+                            <div class="field choice admin__field admin__field-option">
+                                <input type="radio" name="textureoption" id="matte" class="radio admin__control-radio   product-custom-option" value="matte" />
+                                <label for="matte" class="label mat_lbl" id="matte-lbl" value="matte">
+                                    <div class="texture-img">
+                                        <img src="<?php echo $helper->getImageMediaPathOnly(); ?>wysiwyg/Matte.jpg" alt="matte">
+                                    </div>
+                                    <?php echo __('Matte') ?>
+                                </label>
+                            </div>
+                            <div class="field choice admin__field admin__field-option">
+                                <input name="textureoption" id="high-gloss" type="radio" class="radio admin__control-radio   product-custom-option" value="High gloss" />
+                                <label for="high-gloss" class="label high-glass_lbl active" id="high-glass_lbl" value="High gloss">
+                                    <div class="texture-img">
+                                        <img src="<?php echo $helper->getImageMediaPathOnly(); ?>wysiwyg/Gloss.jpg" alt="gloss">
+                                    </div>
+                                    <?php echo __('High Gloss') ?>
+                                </label>
+                            </div>
+
+                            <div class="field choice admin__field admin__field-option">
+                                <input type="radio" name="textureoption" id="linen" class="radio admin__control-radio  product-custom-option" value="Linen" />
+                                <label for="linen" class="label linen_lbl" id="linen-lbl" value="Linen">
+                                    <div class="texture-img">
+                                        <img src="<?php echo $helper->getImageMediaPathOnly(); ?>wysiwyg/Linen.jpg" alt="linen">
+                                    </div>
+                                    <?php echo __('Linen') ?>
+                                </label>
+                            </div>
+                        </div>
+                        <span id="options-1-container"></span>
+                    </div>
+                </div>
+                <div class="other-details">
+                    <table class="frame-info-tbl mkcnv-texture-table">
+                        <tr>
+                            <td class="label"><?php echo __('Final Frame Print Size') ?></td>
+                            <td class="val frame-size mkcnv-final-size"><?php echo __($width_small . '" X ' . $height_small . '"'); ?></td>
+                        </tr>
+                        <tr>
+                            <td class="label"><?php echo __('Finishes') ?></td>
+                            <td class="val frame-matt mkcnv-texture"></td>
+                        </tr>
+                    </table>
+                </div>
+                <?php
+                $frame_btn_text = "Select Frame";
+                $without_frame_btn_text = "Stretching Only";
+                ?>
+                <div class="canv-note"><span>Note: </span>This product is UV Protected, Non-Glare and Shatterproof, and does not contain glass. Final Framed Print Size may vary based on the frame selection.</div>
+                <?php if ($session->getDesignerFrame()) : ?>
+                    <div class="btnBar">
+                        <button type="sumit" id="review_final_frame" class="nextBtn action primary disabled"><?php echo __('Review Final Frame'); ?></button>
+                    </div>
+                <?php else : ?>
+                    <div class="btnBar">
+                        <button type="sumit" id="chooseframe" class="nextBtn action primary disabled"><?php echo $frame_btn_text; ?></button>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <div class="product media">
+            <div class="frame-image-container" id="frame-image-container">
+                <canvas id="frame-image" style="display: none;"></canvas>
+                <img src="<?php echo $image_main; ?>" id="target" style="display: none;" />
+            </div>
+        </div>
+    </form>
+    <script type="text/javascript">
+        require([
+            'jquery',
+            'domReady!',
+            'fabricjs',
+            'imgareaselect'
+
+        ], function($, fabricjs, imgareaselect) {
+            /** Check browser for set event type of range slider **/
+
+            var ua = window.navigator.userAgent;
+            var msie = ua.indexOf("MSIE ");
+            if (msie > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./)) {
+                var event_thing = "change";
+            } else {
+                var event_thing = "input";
+            }
+
+            $('#buynowbtn').click(function(event) {
+                $('#typeofbutton').val("buynow");
+                /* $("#framesize-form").submit();*/
+                SubmitForm();
+            });
+
+            $('#chooseframe').click(function(event) {
+                $('#typeofbutton').val("chooseframe");
+                /*$("#framesize-form").submit();*/
+                SubmitForm();
+            });
+            $('#review_final_frame').click(function(event) {
+                $('#typeofbutton').val("review_final_frame");
+                /*$("#framesize-form").submit();*/
+                SubmitForm();
+            });
+
+
+            function SubmitForm() {
+                var myForm = $('#framesize-form');
+                var formAlreadySubmitted = 0;
+
+                myForm.submit(function(e) {
+                    $(".btnBar .nextBtn").addClass('disabled');
+                    $('.loader').show();
+                    formAlreadySubmitted = true;
+
+                });
+            }
+
+            /*START : This code used for set slider if already set in session and user roll back to this page*/
+            <?php if (isset($scaleparameters)) : ?>
+                var scaleparameters = <?php echo $scaleparameters; ?>;
+
+                <?php if (isset($max_step) && !empty($max_step)) : ?>
+                    <?php if ($max_step < 50) : ?>
+                        var p_val = scaleparameters / 150;
+                    <?php elseif ($max_step > 50 && $max_step < 100) : ?>
+                        var p_val = scaleparameters / 250;
+                    <?php elseif ($max_step > 100 && $max_step < 200) : ?>
+                        var p_val = scaleparameters / 350;
+                    <?php elseif ($max_step > 200 && $max_step < 300) : ?>
+                        var p_val = scaleparameters / 450;
+                    <?php elseif ($max_step > 300 && $max_step < 400) : ?>
+                        var p_val = scaleparameters / 550;
+                    <?php elseif ($max_step > 500) : ?>
+                        var p_val = scaleparameters / 650;
+                    <?php else : ?>
+                        var p_val = scaleparameters / 150;
+                    <?php endif; ?>
+                <?php endif; ?>
+
+                var scale_size = (0.3 + p_val);
+                $("#frame-image").css({
+                    "transform": "scale(" + scale_size + ")"
+                })
+                if (scaleparameters > -1) {
+                    $('#scale-control').val(scaleparameters);
+                }
+            <?php endif; ?>
+            /*END : This code used for set slider if already set in session and user roll back to this page*/
+
+            $('.nextBtn').removeClass('disabled');
+            <?php $texture_option_val = $session->getMakeCanvasTextureoption();
+            /* START : this code run when the session set for texture options and slider if size and as per that value we put value in front for selected texture and slider position*/
+            if (isset($texture_option_val)) : ?>
+                var texture_option_val = "<?php echo $texture_option_val; ?>";
+                var label = $("input[name='textureoption'][value='" + texture_option_val + "']").next('label');
+                var labId = label.attr('id');
+                var inet = setInterval(function() {
+                    $("input[name='textureoption'][value='" + texture_option_val + "']").attr('checked', 'checked');
+                    $('#' + labId).addClass('active').trigger('click');
+                    if ($('#' + labId).text() == $('.mkcnv-texture').text()) {
+                        clearInterval(inet);
+                    }
+                }, 2000);
+                /* END : this code run when the session set for texture options and slider if size and as per that value we put value in front for selected texture and slider position*/
+            <?php else : ?>
+                /* START : this code run at first time user come, sessio not set yet for texture options and slider*/
+                $('#matte-lbl').trigger('click');
+                $('.mkcnv-texture').text($('#matte-lbl').text());
+                /* END : this code run at first time user come, sessio not set yet for texture options and slider*/
+            <?php endif; ?>
+
+            /*START : This code used for set slider if already set in session and user roll back to this page*/
+            <?php if (isset($scaleparameters)) : ?>
+                var scaleparameters = '<?php echo $scaleparameters; ?>';
+                if (scaleparameters) {
+                    $('#scale-control,#scaleparameters').val(scaleparameters);
+                }
+            <?php endif; ?>
+            $("input[name='textureoption']").next('label').click(function(event) {
+                $('.mkcnv-texture').text($(this).text());
+            });
+            /*END : This code used for set slider if already set in session and user roll back to this page*/
+
+            SmallHeight();
+            /** function to set minimum and maximum frame size in range slider **/
+            function SmallHeight() {
+                var cc = 0;
+                var image_ratio_ = <?php echo $image_ratio; ?>;
+                var small_width_ = <?php echo $width_small; ?>;
+                var new_width_ = (0.25 * cc) + small_width_;
+                var new_heigth_ = new_width_ / image_ratio_;
+                $('.range-start-val').text(new_width_ + '" X ' + new_heigth_.toFixed(0) + '"');
+            }
+
+
+            /** defining range slider for increase image size **/
+            var p = document.getElementById("scale-control");
+            /** Setup value to range slider **/
+            <?php if (isset($scaleparameters)) : ?>
+            <?php else : ?>
+                photo_size_calculation(0);
+            <?php endif; ?>
+
+            frame_size_calculation($(".range-current-val").text(), 0);
+
+            var bg_image_path = "";
+            var bg_image_org_w = 1250;
+            var bg_image_org_h = 750;
+            var final_frame_width;
+            var final_scale_size;
+            var img_canvas_w, img_canvas_h;
+            var canvas = new fabric.Canvas('frame-image', {
+                backgroundColor: "#FFF",
+                preserveObjectStacking: true
+            });
+            var mat_rect = new fabric.Rect();
+            var frame_border_top;
+            var frame_border_right;
+            var frame_border_bottom;
+            var frame_border_left;
+            var image_w;
+            var image_h;
+            var artwork_img;
+            var aspe_rat;
+            var imageFrame = document.getElementById('target').src;
+            var frame_border_size = 0;
+            var default_frame_border_size = 12;
+            <?php if ($frame_depth && $frame_url) : ?>
+                frame_border_size = 10;
+            <?php endif; ?>
+            var base_mat_size = 0;
+            var one_side_mat_frame_margin = 0;
+            var mat_size = 0;
+            var mat_canvas_w;
+            var mat_canvas_h;
+            var img_changed_w;
+            var img_changed_h;
+            var base_part_w = 548;
+            var base_scale_margin = parseFloat(base_part_w / bg_image_org_w).toFixed(2);
+            var base_scale_mark = 50;
+            var frame_depth = 1;
+
+            <?php
+            if (isset($frame_depth) && !empty($frame_depth)) : ?>
+                frame_depth = <?php echo $frame_depth; ?>;
+            <?php endif; ?>
+
+            frame_border_size = (default_frame_border_size * frame_depth);
+
+            if ($(window).width() < 1200) {
+                frame_border_size = (parseFloat(($(window).width() * default_frame_border_size) / 1200).toFixed(2) * frame_depth);
+            } else {
+                frame_border_size = (default_frame_border_size * frame_depth);
+            }
+
+            $(".frame-image-container").height((bg_image_org_h * $(".product.media").outerWidth()) / bg_image_org_w);
+            bg_width_new = parseFloat($(".frame-image-container").width() * base_scale_margin).toFixed(0);;
+            canvas.setWidth(parseInt(bg_width_new));
+            canvas.setHeight(parseInt(bg_width_new));
+            canvas.selection = false;
+            canvas.renderAll();
+            fabric.Image.fromURL(imageFrame, function(img) {
+                artwork_img = img;
+                image_w = artwork_img.width;
+                image_h = artwork_img.height;
+                aspe_rat = image_w / image_h;
+                setup_artwork();
+                $("#frame-image").show();
+            });
+
+            $(window).resize(function(event) {
+                if ($(window).width() < 1200) {
+                    frame_border_size = (parseFloat(($(window).width() * default_frame_border_size) / 1200).toFixed(2) * frame_depth);
+                } else {
+                    frame_border_size = (default_frame_border_size * frame_depth);
+                }
+                canvas.clear();
+                setup_artwork();
+            });
+
+            var manually_change = true;
+            /** defining range slider for increase image size **/
+            var p = document.getElementById("scale-control");
+            scaling_canvas(manually_change);
+
+            /** Change event function of mat range slider **/
+            p.addEventListener(event_thing, function() {
+                scaling_canvas(manually_change);
+                if (manually_change) {
+
+                    manually_change = false;
+                }
+            }, false);
+
+            function setup_artwork() {
+                $(".frame-image-container").height((bg_image_org_h * $(".product.media").outerWidth()) / bg_image_org_w);
+                bg_width_new = parseFloat($(".frame-image-container").width() * base_scale_margin).toFixed(0);
+
+                one_side_mat_frame_margin = parseFloat((parseInt(mat_size * base_mat_size) + parseInt(frame_border_size))).toFixed(2);
+
+                var art_img_w, art_img_h;
+
+                if (image_h > image_w) {
+                    img_canvas_h = bg_width_new;
+                    img_canvas_w = parseInt(aspe_rat * img_canvas_h);
+
+                    art_img_h = bg_width_new - (one_side_mat_frame_margin * 2);
+                    art_img_w = parseInt(aspe_rat * art_img_h);
+                } else {
+                    img_canvas_w = bg_width_new;
+                    img_canvas_h = parseInt(img_canvas_w / aspe_rat);
+
+                    art_img_w = bg_width_new - (one_side_mat_frame_margin * 2);
+                    art_img_h = parseInt(art_img_w / aspe_rat);
+                }
+
+                mat_canvas_w = art_img_w + (one_side_mat_frame_margin * 2);
+                mat_canvas_h = art_img_h + (one_side_mat_frame_margin * 2);
+
+                canvas.add(artwork_img);
+                artwork_img.set({
+                    width: art_img_w,
+                    height: art_img_h,
+                    top: mat_canvas_h / 2,
+                    left: mat_canvas_w / 2,
+                    originX: "center",
+                    originY: "center"
+                });
+
+                canvas.setDimensions({
+                    width: mat_canvas_w,
+                    height: mat_canvas_h
+                });
+
+                mat_rect.set({
+                    width: parseInt(mat_canvas_w),
+                    height: parseInt(mat_canvas_h),
+                    fill: '#FFF',
+                    top: mat_canvas_h / 2,
+                    left: mat_canvas_w / 2,
+                    originX: "center",
+                    originY: "center"
+                });
+                canvas.add(mat_rect);
+                mat_rect.moveTo(0);
+
+                <?php if ($frame_depth && $frame_url) : ?>
+                    loadPattern('<?php echo $frame_url; ?>');
+                <?php endif; ?>
+
+                set_canvas_scale();
+
+            }
+
+            function set_canvas_scale() {
+                final_frame_width = frame_size_calculation($(".range-current-val").text(), 0);
+                if (final_frame_width <= base_scale_mark) {
+                    final_scale_size = (final_frame_width / base_scale_mark).toFixed(2);
+                    $("#frame-image").css({
+                        "transform": "scale(" + final_scale_size + ")"
+                    });
+                } else {
+                    $("#frame-image").css({
+                        "transform": "scale(1)"
+                    });
+                }
+            }
+
+
+            function loadPattern(url) {
+                fabric.Image.fromURL(url, function(img) {
+                    img.scaleToWidth(img.width / 2);
+                    var patternSourceCanvas = new fabric.StaticCanvas();
+                    patternSourceCanvas.add(img);
+                    patternSourceCanvas.renderAll();
+                    var pattern = new fabric.Pattern({
+                        source: function() {
+                            patternSourceCanvas.setDimensions({
+                                width: frame_border_size,
+                                height: 2000
+                            });
+                            patternSourceCanvas.renderAll();
+                            return patternSourceCanvas.getElement();
+                        },
+                        angle: -90,
+                        repeat: 'repeat'
+                    });
+
+                    var frameTop = [{
+                            x: 0,
+                            y: 0
+                        },
+                        {
+                            x: frame_border_size,
+                            y: 0 + frame_border_size
+                        },
+                        {
+                            x: frame_border_size,
+                            y: mat_rect.width - frame_border_size
+                        },
+                        {
+                            x: 0,
+                            y: mat_rect.width
+                        }
+                    ];
+
+                    var frameLeft = [{
+                            x: 0,
+                            y: 0
+                        },
+                        {
+                            x: frame_border_size,
+                            y: 0 + frame_border_size
+                        },
+                        {
+                            x: frame_border_size,
+                            y: mat_rect.height - frame_border_size
+                        },
+                        {
+                            x: 0,
+                            y: mat_rect.height
+                        }
+                    ];
+
+                    var frameBottom = [{
+                            x: 0,
+                            y: 0
+                        },
+                        {
+                            x: frame_border_size,
+                            y: 0 + frame_border_size
+                        },
+                        {
+                            x: frame_border_size,
+                            y: mat_rect.width - frame_border_size
+                        },
+                        {
+                            x: 0,
+                            y: mat_rect.width
+                        }
+                    ];
+
+                    var frameRight = [{
+                            x: mat_rect.width - frame_border_size,
+                            y: 0
+                        },
+                        {
+                            x: mat_rect.width,
+                            y: frame_border_size
+                        },
+                        {
+                            x: mat_rect.width,
+                            y: mat_rect.height - frame_border_size
+                        },
+                        {
+                            x: mat_rect.width - frame_border_size,
+                            y: mat_rect.height
+                        }
+                    ];
+
+                    if (canvas.getObjects()[2] != undefined) {
+                        canvas.remove(frame_border_top);
+                        canvas.remove(frame_border_right);
+                        canvas.remove(frame_border_bottom);
+                        canvas.remove(frame_border_left);
+                    }
+
+                    frame_border_top = new fabric.Polygon(
+                        frameTop, {
+                            originX: "center",
+                            originY: "center",
+                            angle: 90,
+                            top: parseFloat(frame_border_size / 2).toFixed(2),
+                            left: mat_rect.width / 2,
+                            fill: pattern,
+                            objectCaching: false
+                        }
+                    );
+                    canvas.add(frame_border_top);
+                    frame_border_top.moveTo(3);
+
+                    frame_border_bottom = new fabric.Polygon(
+                        frameBottom, {
+                            originX: "center",
+                            originY: "center",
+                            angle: -90,
+                            top: mat_rect.height - parseFloat(frame_border_size / 2).toFixed(2),
+                            left: mat_rect.width / 2,
+                            fill: pattern,
+                            objectCaching: false
+                        }
+                    );
+                    canvas.add(frame_border_bottom);
+                    frame_border_bottom.moveTo(3);
+
+                    frame_border_right = new fabric.Polygon(
+                        frameRight, {
+                            top: mat_rect.height / 2,
+                            left: mat_rect.width - parseFloat(frame_border_size / 2).toFixed(2),
+                            originX: "center",
+                            originY: "center",
+                            fill: pattern,
+                            objectCaching: false,
+                            angle: 180
+                        }
+                    );
+                    canvas.add(frame_border_right);
+                    frame_border_right.moveTo(3);
+
+                    frame_border_left = new fabric.Polygon(
+                        frameLeft, {
+                            top: mat_rect.height / 2,
+                            left: parseFloat(frame_border_size / 2).toFixed(2),
+                            originX: "center",
+                            originY: "center",
+                            fill: pattern,
+                            objectCaching: false
+                        }
+                    );
+                    canvas.add(frame_border_left);
+                    frame_border_left.moveTo(3);
+
+                });
+            }
+
+            function scaling_canvas(manually_change = false) {
+                photo_size_calculation(p.value, manually_change);
+                set_canvas_scale();
+            }
+
+            /** function to set minimum and maximum frame size in range slider **/
+            function photo_size_calculation(current_pointer, manually_change = false) {
+
+                var small_width_mannualy = parseFloat($("input[name='manually_width']").val());
+                var start_range_data = $(".range-start-val").text();
+                var new_width__start_range = start_range_data.split('X')[0];
+                new_width__start_range = parseFloat(new_width__start_range.replace(/['"]+/g, ''));
+                if (!small_width_mannualy) {
+                    return false;
+                }
+                var default_decimal_val = false;
+                if (small_width_mannualy) {
+
+                    if (manually_change) {
+                        default_decimal_val = true;
+                    }
+
+                }
+                var updated_pointer = $("#scale-control").attr('max');
+                var defualt_small_width = <?= $width_small ?>;
+
+
+                //if(small_width_mannualy < defualt_small_width  ){
+                if (new_width__start_range < defualt_small_width) {
+                    /*$("#new_width_start_range").val(new_width__start_range);*/
+                    var small_width = new_width__start_range;
+                    var max_pointer = updated_pointer;
+
+                } else {
+                    /* $("#new_width_start_range").val("");*/
+                    var small_width = <?php echo $width_small; ?>;
+                    var max_pointer = <?php echo round($max_step); ?>;
+                }
+
+
+                var image_ratio = <?php echo $image_ratio; ?>;
+                var new_width = (0.25 * current_pointer) + small_width;
+                var new_heigth = new_width / image_ratio;
+
+                if (parseFloat(current_pointer) == 0) {
+                    var intial = $('.range-start-val').text();
+                    $('.range-current-val').text(intial);
+                    if (!default_decimal_val) {
+                        var new_width__intial = intial.split('X')[0];
+                        var new_heigth__intial = intial.split('X')[1];
+                        new_width__intial = parseFloat(new_width__intial.replace(/['"]+/g, ''));
+                        new_heigth__intial = parseFloat(new_heigth__intial.replace(/['"]+/g, ''));
+                        $('input[name="manually_width"]').val(new_width__intial);
+                        $('input[name="manually_height"]').val(new_heigth__intial);
+                    }
+                }
+                if (parseFloat(current_pointer) == parseFloat(max_pointer)) {
+                    var final_text = $('.range-end-val').text();
+                    $('.range-current-val').text(final_text);
+                    if (!default_decimal_val) {
+                        var new_width__ = final_text.split('X')[0];
+                        var new_heigth__ = final_text.split('X')[1];
+                        new_width__ = parseFloat(new_width__.replace(/['"]+/g, ''));
+                        new_heigth__ = parseFloat(new_heigth__.replace(/['"]+/g, ''));
+                        $('input[name="manually_width"]').val(new_width__);
+                        $('input[name="manually_height"]').val(new_heigth__);
+                    }
+                }
+                if (current_pointer == max_pointer || current_pointer == 0) {
+
+                } else {
+                    $(".range-current-val").text(roundNearQtr(new_width) + '" X ' + roundNearQtr(new_heigth.toFixed(2)) + '"');
+                    if (!default_decimal_val) {
+                        $('input[name="manually_width"]').val(new_width);
+                        $('input[name="manually_height"]').val(roundNearQtr(new_heigth));
+                    }
+                }
+                $("#scaleparameters").val(current_pointer);
+                $("#scale-control").val(current_pointer);
+
+            }
+
+            function roundNearQtr(number) {
+                return (Math.round(number * 4) / 4).toFixed(2);
+            }
+
+            function frame_size_calculation(frame, matvalue) {
+                var frame_manually_width = $('input[name="manually_width"]').val();
+                var frame_manually_height = $('input[name="manually_height"]').val();
+                <?php if ($frame_depth && $frame_url) : ?>
+                    var FrameWidth = parseFloat($.trim(frame_manually_width)) + 2 * parseFloat(<?php echo $frame_depth; ?>);
+                    var FrameHeight = parseFloat($.trim(frame_manually_height)) + 2 * parseFloat(<?php echo $frame_depth; ?>);
+                <?php else : ?>
+                    var FrameWidth = parseFloat($.trim(frame_manually_width));
+                    var FrameHeight = parseFloat($.trim(frame_manually_height));
+                <?php endif; ?>
+                if (FrameWidth && FrameHeight) {
+                    var final_frame = FrameWidth.toFixed(2) + '" X ' + FrameHeight.toFixed(2) + '"';
+                    $(".frame-info-tbl .frame-size").text(final_frame);
+                    $("#final-frame-size").val(final_frame);
+                    if (parseFloat(FrameWidth.toFixed(2)) >= parseFloat(FrameHeight.toFixed(2))) {
+                        return FrameWidth.toFixed(2);
+                    } else {
+                        return FrameHeight.toFixed(2);
+                    }
+                }
+            }
+
+            /* bind controls to canvas on window load */
+            (function() {
+                fabric.util.addListener(fabric.window, 'load', function() {
+                    var canvas = this.__canvas || this.canvas,
+                        canvases = this.__canvases || this.canvases;
+                    canvas && canvas.calcOffset && canvas.calcOffset();
+                    if (canvases && canvases.length) {
+                        for (var i = 0, len = canvases.length; i < len; i++) {
+                            canvases[i].calcOffset();
+                        }
+                    }
+                });
+            });
+
+
+            $(document).ready(function() {
+                var image_ratio = <?php echo $image_ratio; ?>;
+                var Scaleparameters = '<?php echo $Scaleparameters; ?>';
+                Customheightwidth(Scaleparameters, manually_change = true);
+                $('input[name="manually_width"]').on("change paste keyup", function(e) {
+                    var Scaleparameters = false;
+                    var manually_change = true;
+                    Customheightwidth(Scaleparameters, manually_change);
+
+                });
+
+                function Customheightwidth(Scaleparameters = false, manually_change = false) {
+
+
+                    var max_width = <?= $width_bigg ?>;
+                    var min_width = <?= $width_small ?>;
+                    var max_height = <?= $height_bigg ?>;
+                    var min_height = <?= $height_small ?>;
+                    var max_step = <?= round($max_step) ?>;
+                    var new_width = parseFloat($('input[name="manually_width"]').val());
+
+                    if (!new_width) {
+                        new_width = 0;
+                    }
+                    /*var new_heigth = $('input[name="manually_height"]').val();*/
+                    var new_heigth = new_width / image_ratio;
+                    $('input[name="manually_height"]').val(roundNearQtr(new_heigth));
+
+                    // slider max
+
+                    if (new_width >= max_width) {
+
+                        if (new_width == max_width) {
+                            console.log("maxx===");
+                            $('input[name="manually_height"]').val(max_height);
+                            $(".range-current-val").text(new_width + '" X ' + max_height + '"');
+                            $("#scale-control").attr("max", max_step).change();
+                            $('input[name="max_steps"]').val(max_step);
+                            if (Scaleparameters) {
+                                $("#scale-control").val(Scaleparameters).change();
+                            } else {
+                                $("#scale-control").val(max_step).change();
+                            }
+
+                            $("#scaleparameters").val(max_step).change();
+                            scaling_canvas(manually_change);
+                            $(".range-start-val").text(roundNearQtr(min_width) + '" X ' + roundNearQtr(min_height) + '"');
+                            $(".range-end-val").text(roundNearQtr(new_width) + '" X ' + roundNearQtr(max_height) + '"');
+                            return false;
+                        }
+                        console.log("maxx");
+                        var final_mannualy_width = new_width - min_width;
+                        var new_step = final_mannualy_width / 0.25;
+                        $("#scale-control").attr("max", new_step).change();
+                        $('input[name="max_steps"]').val(new_step);
+                        console.log(Scaleparameters);
+                        if (Scaleparameters) {
+                            $("#scale-control").val(Scaleparameters).change();
+                            $(".range-end-val").text(roundNearQtr(new_width) + '" X ' + roundNearQtr(new_heigth) + '"');
+
+                        } else {
+                            $("#scale-control").val(new_step).change();
+                        }
+                        $("#scaleparameters").val(new_step).change();
+                        scaling_canvas(manually_change);
+                        if (!Scaleparameters) {
+                            $(".range-start-val").text(roundNearQtr(min_width) + '" X ' + roundNearQtr(min_height) + '"');
+                            $(".range-end-val").text(roundNearQtr(new_width) + '" X ' + roundNearQtr(new_heigth) + '"');
+                        }
+                        return false;
+                    }
+
+                    // slider min
+
+                    if (min_width >= new_width) {
+
+                        var final_mannualy_width = max_width - new_width;
+                        var new_step = Math.round(final_mannualy_width / 0.25);
+                        $("#scale-control").attr("max", new_step).change();
+                        $('input[name="max_steps"]').val(new_step);
+
+                        if (Scaleparameters) {
+                            $("#scale-control").val(Scaleparameters).change();
+                            $("#scaleparameters").val(Scaleparameters).change();
+                        } else {
+                            $("#scale-control").val(0).change();
+                            $("#scaleparameters").val(0).change();
+                        }
+
+
+                        if (new_width == min_width) {
+                            console.log("min===");
+                            $('input[name="manually_height"]').val(min_height);
+                            $('input[name="max_steps"]').val(max_step);
+                            $("#scale-control").attr("max", max_step).change();
+                            if (Scaleparameters) {
+                                $("#scale-control").val(Scaleparameters).change();
+                                $("#scaleparameters").val(Scaleparameters).change();
+
+                            } else {
+                                $("#scale-control").val(0).change();
+                                $("#scaleparameters").val(0).change();
+                            }
+
+
+                            scaling_canvas(manually_change);
+                            if (!Scaleparameters) {
+                                $(".range-start-val,.range-current-val").text(roundNearQtr(min_width) + '" X ' + roundNearQtr(min_height) + '"');
+                                $(".range-end-val").text(roundNearQtr(max_width) + '" X ' + roundNearQtr(max_height) + '"');
+                            }
+                            return false;
+                        }
+                        console.log("min");
+
+
+                        if (!Scaleparameters) {
+                            $(".range-start-val").text(roundNearQtr(new_width) + '" X ' + roundNearQtr(new_heigth) + '"');
+                            $(".range-end-val").text(roundNearQtr(max_width) + '" X ' + roundNearQtr(max_height) + '"');
+                            $(".range-current-val").text(roundNearQtr(new_width) + '" X ' + roundNearQtr(new_heigth) + '"');
+                        } else {
+                            $(".range-start-val").text(roundNearQtr(new_width) + '" X ' + roundNearQtr(new_heigth) + '"');
+
+                        }
+                        scaling_canvas(manually_change);
+                        return false;
+                    }
+                    var final_mannualy_width = max_width - new_width;
+                    var new_step = final_mannualy_width / 0.25;
+                    var final_slider_step = max_step - new_step;
+                    $("#scale-control").attr("max", max_step).change();
+                    $('input[name="max_steps"]').val(max_step);
+                    if (Scaleparameters) {
+                        $("#scale-control").val(Scaleparameters).change();
+                    } else {
+                        $("#scale-control").val(final_slider_step).change();
+                    }
+                    $("#scaleparameters").val(final_slider_step).change();
+                    console.log("range--");
+                    $(".range-start-val").text(roundNearQtr(min_width) + '" X ' + roundNearQtr(min_height) + '"');
+                    $(".range-current-val").text(roundNearQtr(new_width) + '" X ' + roundNearQtr(new_heigth) + '"');
+                    scaling_canvas(manually_change);
+                }
+
+            })
+
+
+
+
+        });
+    </script>
+    <style type="text/css">
+        .product-info-main .product.attribute.overview {
+            display: none;
+        }
+    </style>
+<?php } else {
+    $redirect = $helper->getDoRedirect();
+    $redirect->setRedirect('create_frameprint_oversize');
+} ?>
+
+<script type="text/x-magento-init">
+    {
+        "[data-role= framesize-form]": {
+            "validation": {}
+        }
+    }
+
+
+</script>
+
+<script>
+
+</script>
