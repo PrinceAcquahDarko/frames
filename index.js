@@ -47,7 +47,7 @@ function generateImageFrame(){
 }
 
 function generateImageBorders(){
-        const url = '1.jpg'
+        const url = '2.jpg'
        //for right side
        fabric.Image.fromURL(url, function(oImg) {
         oImg.set({
